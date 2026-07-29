@@ -1,0 +1,15 @@
+{
+  "mode": "closure",
+  "base_sha": "5b0ce7ea",
+  "head_sha": "dbb01214",
+  "verdict": "READY",
+  "findings": [],
+  "closure": [
+    {
+      "id": "REV-001",
+      "status": "fixed",
+      "evidence": "The loader validates and imports one open file descriptor; the retained substitution contract test passes and the pathname is not reopened."
+    }
+  ],
+  "summary": "REV-001 is closed and the remediation diff introduces no confirmed blocking regression."
+}

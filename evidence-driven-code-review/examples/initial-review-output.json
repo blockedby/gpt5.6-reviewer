@@ -1,0 +1,56 @@
+{
+  "mode": "initial",
+  "base_sha": "163f0e08",
+  "head_sha": "5b0ce7ea",
+  "verdict": "NOT_READY",
+  "findings": [
+    {
+      "id": "REV-001",
+      "title": "Archive validation and import can use different files",
+      "locations": [
+        {
+          "path": "scripts/local/prebuild-release-images.sh",
+          "start_line": 210,
+          "end_line": 238
+        }
+      ],
+      "scenario": "A concurrent process replaces the archive pathname after validation but before Docker reopens it for import.",
+      "expected": "Docker imports the exact archive object that passed validation.",
+      "actual": "Validation reads one file while Docker may reopen and import a different file at the same pathname.",
+      "evidence_type": "contract_test",
+      "evidence": "A focused fake-Docker barrier test replaces the archive after validation; the loader receives substituted bytes.",
+      "impact": 4,
+      "confidence": 98,
+      "relationship": "introduced",
+      "verification_status": "verified",
+      "disposition": "BLOCK",
+      "next_action": "Open once without following symlinks, validate that descriptor, and pass the same descriptor to Docker.",
+      "retain_regression_test": true,
+      "closure_condition": "The substitution test can no longer make imported bytes differ from validated bytes."
+    },
+    {
+      "id": "REV-002",
+      "title": "Recovery journal format is difficult to inspect manually",
+      "locations": [
+        {
+          "path": "scripts/local/recovery_journal.py",
+          "start_line": 1,
+          "end_line": 90
+        }
+      ],
+      "scenario": "An operator manually inspects a failed-run journal.",
+      "expected": "The journal is reasonably understandable.",
+      "actual": "The compact format requires a helper command.",
+      "evidence_type": "static_proof",
+      "evidence": "The record stores compact field names and is designed for machine recovery.",
+      "impact": 2,
+      "confidence": 90,
+      "relationship": "introduced",
+      "verification_status": "not_required",
+      "disposition": "FOLLOW_UP",
+      "next_action": "Consider a separate human-readable inspection command.",
+      "retain_regression_test": false
+    }
+  ],
+  "summary": "One confirmed archive-identity blocker remains; one nonblocking operator-experience follow-up was identified."
+}

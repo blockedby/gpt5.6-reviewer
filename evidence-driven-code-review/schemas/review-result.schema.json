@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-result.schema.json",
+  "title": "Evidence-driven code review result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "base_sha",
+    "head_sha",
+    "verdict",
+    "findings",
+    "summary"
+  ],
+  "properties": {
+    "mode": {
+      "enum": [
+        "initial",
+        "closure"
+      ]
+    },
+    "base_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "head_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "verdict": {
+      "enum": [
+        "READY",
+        "READY_WITH_FOLLOW_UPS",
+        "NOT_READY"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "finding.schema.json"
+      }
+    },
+    "closure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REV-[0-9]{3,}$"
+          },
+          "status": {
+            "enum": [
+              "fixed",
+              "still_open",
+              "regressed",
+              "not_applicable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  }
+}
