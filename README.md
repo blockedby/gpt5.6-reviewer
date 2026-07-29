@@ -30,9 +30,9 @@ blocking = (
 ```
 
 Confirmed impact-2 findings, confirmed serious pre-existing findings, and
-important unproven runtime checks are follow-ups under the canonical policy.
-Impact-1, confidence-below-50, disproved, and ordinary unresolved candidates
-must not appear in final results.
+important unproven runtime checks at confidence 50–79 are follow-ups under the
+canonical policy. Impact-1, confidence-below-50, disproved, and ordinary
+unresolved candidates must not appear in final results.
 
 The derived verdict is:
 
@@ -163,8 +163,9 @@ mode.
 
 ### Finding
 
-Finding IDs match `REV-[0-9]{3,}` exactly and are unique within a result or
-closure request. All documented strings and locations are nonempty. A location
+Finding IDs are positive canonical values such as `REV-001` (never `REV-000`)
+and are unique within a result or closure request. All documented strings and
+locations are nonempty. A location
 may contain only `path`, or a complete positive `start_line`/`end_line` pair
 where start does not exceed end. Every blocker has a nonempty
 `closure_condition`.
@@ -178,10 +179,10 @@ Every result has `mode`, `base_sha`, `head_sha`, a findings-derived `verdict`,
 `findings`, and a nonempty `summary`. Initial results cannot contain `closure`.
 Closure results require it.
 
-Closure IDs are unique. `still_open` and `regressed` entries require a `BLOCK`
-finding with the same ID. `fixed` and `not_applicable` entries cannot retain a
-same-ID blocker. With a request supplied, closure IDs must exactly match all
-prior blocker IDs.
+The closure array is nonempty and its IDs are unique. `still_open` and
+`regressed` entries require a `BLOCK` finding with the same ID. `fixed` and
+`not_applicable` entries cannot retain any same-ID finding. With a request
+supplied, closure IDs must exactly match all prior blocker IDs.
 
 See `examples/initial-review-request.json`,
 `examples/initial-review-output.json`, `examples/closure-review-request.json`,

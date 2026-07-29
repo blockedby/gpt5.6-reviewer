@@ -15,6 +15,7 @@ from tests.common import (
     closure_request,
     closure_result,
     finding,
+    follow_up,
     initial_request,
     review_result,
 )
@@ -114,9 +115,13 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stderr, "")
 
     def test_route_returns_only_block_findings(self):
-        code, stdout, stderr = self.run_cli(
-            ["route", str(ROOT / "examples/initial-review-output.json")]
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            result_path = Path(directory) / "result.json"
+            write_json(
+                result_path,
+                review_result(findings=[finding(), follow_up()]),
+            )
+            code, stdout, stderr = self.run_cli(["route", str(result_path)])
         self.assertEqual(code, 0)
         self.assertEqual(stderr, "")
         route = json.loads(stdout)

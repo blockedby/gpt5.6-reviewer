@@ -22,7 +22,7 @@ VALID_DISPOSITIONS = {"BLOCK", "FOLLOW_UP"}
 VALID_VERDICTS = {"READY", "READY_WITH_FOLLOW_UPS", "NOT_READY"}
 VALID_CLOSURE_STATUSES = {"fixed", "still_open", "regressed", "not_applicable"}
 
-FINDING_ID_RE = re.compile(r"REV-[0-9]{3,}\Z")
+FINDING_ID_RE = re.compile(r"REV-(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2,})\Z")
 
 FINDING_REQUIRED = {
     "id",
@@ -137,7 +137,7 @@ def expected_disposition(finding: dict[str, Any]) -> str | None:
         return None
 
     if verification == "unproven":
-        return "FOLLOW_UP" if impact >= 3 else None
+        return "FOLLOW_UP" if impact >= 3 and confidence < 80 else None
 
     if (
         confidence >= 80
@@ -220,7 +220,9 @@ def validate_finding(finding: Any, *, path: str = "finding") -> list[str]:
     if "id" in finding:
         finding_id = finding["id"]
         if not isinstance(finding_id, str) or FINDING_ID_RE.fullmatch(finding_id) is None:
-            errors.append(f"{path}.id must match REV-[0-9]{{3,}} exactly")
+            errors.append(
+                f"{path}.id must match a positive canonical ID such as REV-001"
+            )
 
     for field in (
         "scenario",
@@ -408,7 +410,9 @@ def _validate_closure_entry(value: Any, *, path: str) -> list[str]:
         not isinstance(value["id"], str)
         or FINDING_ID_RE.fullmatch(value["id"]) is None
     ):
-        errors.append(f"{path}.id must match REV-[0-9]{{3,}} exactly")
+        errors.append(
+            f"{path}.id must match a positive canonical ID such as REV-001"
+        )
     if "status" in value:
         _enum_string(
             value["status"],
@@ -509,6 +513,8 @@ def validate_review_result(result: Any, request: Any | None = None) -> list[str]
     if "closure" in result:
         if not isinstance(closure, list):
             errors.append("result.closure must be an array")
+        elif not closure:
+            errors.append("result.closure must be a nonempty array")
         else:
             for index, entry in enumerate(closure):
                 entry_path = f"result.closure[{index}]"
@@ -535,10 +541,10 @@ def validate_review_result(result: Any, request: Any | None = None) -> list[str]
                     isinstance(closure_id, str)
                     and isinstance(status, str)
                     and status in {"fixed", "not_applicable"}
-                    and closure_id in block_ids
+                    and closure_id in finding_ids
                 ):
                     errors.append(
-                        f"{entry_path} status {status!r} cannot retain a BLOCK "
+                        f"{entry_path} status {status!r} cannot retain a "
                         f"finding with id {closure_id}"
                     )
 

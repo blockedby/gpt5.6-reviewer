@@ -27,30 +27,7 @@
       "next_action": "Open once without following symlinks, validate that descriptor, and pass the same descriptor to Docker.",
       "retain_regression_test": true,
       "closure_condition": "The substitution test can no longer make imported bytes differ from validated bytes."
-    },
-    {
-      "id": "REV-002",
-      "title": "Recovery journal format is difficult to inspect manually",
-      "locations": [
-        {
-          "path": "scripts/local/recovery_journal.py",
-          "start_line": 1,
-          "end_line": 90
-        }
-      ],
-      "scenario": "An operator manually inspects a failed-run journal.",
-      "expected": "The journal is reasonably understandable.",
-      "actual": "The compact format requires a helper command.",
-      "evidence_type": "static_proof",
-      "evidence": "The record stores compact field names and is designed for machine recovery.",
-      "impact": 2,
-      "confidence": 90,
-      "relationship": "introduced",
-      "verification_status": "not_required",
-      "disposition": "FOLLOW_UP",
-      "next_action": "Consider a separate human-readable inspection command.",
-      "retain_regression_test": false
     }
   ],
-  "summary": "One confirmed archive-identity blocker remains; one nonblocking operator-experience follow-up was identified."
+  "summary": "One confirmed archive-identity blocker remains."
 }

@@ -31,7 +31,13 @@ class FindingValidationTests(unittest.TestCase):
         self.assertEqual(validate_finding(follow_up()), [])
 
     def test_id_must_match_exact_pattern(self):
-        for invalid_id in ("REV-1", "REV-001-extra", "xREV-001", "REV-ABC"):
+        for invalid_id in (
+            "REV-1",
+            "REV-000",
+            "REV-001-extra",
+            "xREV-001",
+            "REV-ABC",
+        ):
             with self.subTest(invalid_id=invalid_id):
                 self.assertInvalid(finding(id=invalid_id), "must match")
 
@@ -82,6 +88,12 @@ class FindingValidationTests(unittest.TestCase):
 
     def test_boolean_is_not_an_integer_score(self):
         self.assertInvalid(finding(confidence=True), "confidence must be an integer")
+
+    def test_unproven_is_transient_at_confirmed_confidence(self):
+        self.assertInvalid(
+            finding(confidence=80, verification_status="unproven"),
+            "must be omitted",
+        )
 
     def test_malformed_enum_types_report_errors_without_crashing(self):
         self.assertInvalid(finding(relationship=[]), "relationship must be one of")
@@ -182,6 +194,10 @@ class ResultValidationTests(unittest.TestCase):
         result = closure_result()
         result.pop("closure")
         self.assertInvalid(result, "required in closure mode")
+        self.assertInvalid(
+            closure_result(closure=[]),
+            "closure must be a nonempty array",
+        )
 
     def test_open_status_requires_same_id_block(self):
         self.assertInvalid(
@@ -197,10 +213,14 @@ class ResultValidationTests(unittest.TestCase):
             "requires a BLOCK finding",
         )
 
-    def test_fixed_status_cannot_retain_same_id_block(self):
+    def test_fixed_status_cannot_retain_same_id_finding(self):
         self.assertInvalid(
             closure_result(findings=[finding()]),
-            "cannot retain a BLOCK",
+            "cannot retain a finding",
+        )
+        self.assertInvalid(
+            closure_result(findings=[follow_up(id="REV-001")]),
+            "cannot retain a finding",
         )
 
     def test_cross_check_identity_fields(self):
