@@ -1,0 +1,17 @@
+[project]
+name = "evidence-driven-code-review"
+version = "0.2.0"
+description = "Evidence-driven code-review contracts and routing for coding agents."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+evidence-review = "evidence_review.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["evidence_review"]

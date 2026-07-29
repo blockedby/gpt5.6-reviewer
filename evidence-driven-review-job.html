@@ -528,7 +528,7 @@ verification ∈ {
           <span class="section-number" aria-hidden="true">09</span>
           <div>
             <h2 id="implementation-title">Final implementation details</h2>
-            <p>The package is prompt-and-policy infrastructure. Integrate the role files into the agent harness, pass a bounded review request, validate the JSON result, and route only confirmed blockers back to the owner.</p>
+            <p>The package combines prompt policy with a dependency-free contract CLI. Integrate the role files into the agent harness, pass a bounded review request, validate the JSON result, and route only confirmed blockers back to the owner.</p>
           </div>
         </div>
 
@@ -541,7 +541,8 @@ verification ∈ {
               <li><code>skills/code-review/SKILL.md</code><span>Canonical scope, evidence, confidence, impact and readiness policy.</span></li>
               <li><code>skills/code-review/verifier-prompt.md</code><span>Loaded only for one uncertain serious candidate.</span></li>
               <li><code>schemas/*.json</code><span>Defines machine-readable findings, closure states and verdicts.</span></li>
-              <li><code>scripts/review_policy.py</code><span>Checks final disposition and verdict consistency using Python 3.10+ standard library.</span></li>
+              <li><code>evidence_review/</code><span>Builds, validates, routes and prepares closure JSON using the Python 3.10+ standard library.</span></li>
+              <li><code>scripts/review_policy.py</code><span>Preserves the original one-argument result-validator entry point.</span></li>
             </ul>
           </article>
 
@@ -562,6 +563,8 @@ forbidden_operations:
 # closure mode also receives:
 prior_findings:
   - id: REV-001
+    disposition: BLOCK
+    # all original finding fields and evidence
     closure_condition: exact proof of closure
 remediation_diff: bounded fix diff</pre>
           </article>
@@ -569,25 +572,26 @@ remediation_diff: bounded fix diff</pre>
 
         <ol class="implementation-steps">
           <li><strong>Invoke initial review</strong>Provide task, requirements, product SHAs, changed paths and check boundaries after substantial implementation.</li>
-          <li><strong>Validate the result</strong>Require JSON matching <code>review-result.schema.json</code> and reject policy-inconsistent findings or verdicts.</li>
+          <li><strong>Validate the result</strong>Require JSON matching <code>review-result.schema.json</code> and reject policy-inconsistent findings, verdicts, identities or closure IDs.</li>
           <li><strong>Route by verdict</strong>On <code>NOT_READY</code>, send only <code>BLOCK</code> findings to the implementation owner. Keep follow-ups out of the remediation loop.</li>
-          <li><strong>Close narrowly</strong>Invoke closure with original blocker IDs and remediation diff. Finish on <code>READY</code> or <code>READY_WITH_FOLLOW_UPS</code>.</li>
+          <li><strong>Close narrowly</strong>Invoke closure with the complete original blocker objects and remediation diff. Finish on <code>READY</code> or <code>READY_WITH_FOLLOW_UPS</code>.</li>
         </ol>
 
         <div class="validation-row">
           <div class="command-box">
             <h3>Validate review artifacts</h3>
-            <pre>python scripts/review_policy.py \
-  examples/initial-review-output.json
+            <pre>python -m evidence_review validate-request \
+  examples/initial-review-request.json
 
-python scripts/review_policy.py \
-  examples/closure-review-output.json</pre>
+python -m evidence_review validate-result \
+  examples/initial-review-output.json \
+  --request examples/initial-review-request.json</pre>
           </div>
           <div class="command-box plain">
             <h3>Run policy regression tests</h3>
             <pre>python -m unittest discover \
   -s tests -v</pre>
-            <p style="margin:1rem 0 0"><strong>Expected package baseline:</strong> both example results validate and all seven policy tests pass.</p>
+            <p style="margin:1rem 0 0"><strong>Expected package baseline:</strong> all request/result example pairs validate and the full standard-library test suite passes.</p>
           </div>
         </div>
       </div>
@@ -599,18 +603,20 @@ python scripts/review_policy.py \
           <span class="section-number" aria-hidden="true">10</span>
           <div>
             <h2 id="sources-title">Source documents</h2>
-            <p>This page is derived from the supplied archive. The copied source package is linked below for traceability.</p>
+            <p>This page is derived from the repository source package, linked below for traceability.</p>
           </div>
         </div>
         <ul class="sources">
-          <li><a href="evidence-driven-code-review/README.md"><strong>README.md</strong><span>Workflow overview, core model, layout and orchestrator.</span></a></li>
-          <li><a href="evidence-driven-code-review/skills/code-review/SKILL.md"><strong>skills/code-review/SKILL.md</strong><span>Canonical review policy, evidence rules, scope and dispositions.</span></a></li>
-          <li><a href="evidence-driven-code-review/agents/code-reviewer.md"><strong>agents/code-reviewer.md</strong><span>Independent, read-only reviewer role.</span></a></li>
-          <li><a href="evidence-driven-code-review/skills/code-review/verifier-prompt.md"><strong>skills/code-review/verifier-prompt.md</strong><span>Single-candidate verifier contract and outputs.</span></a></li>
-          <li><a href="evidence-driven-code-review/schemas/review-result.schema.json"><strong>schemas/review-result.schema.json</strong><span>Machine-readable review result shape.</span></a></li>
-          <li><a href="evidence-driven-code-review/scripts/review_policy.py"><strong>scripts/review_policy.py</strong><span>Executable disposition and verdict checks.</span></a></li>
-          <li><a href="evidence-driven-code-review/examples/initial-review-output.json"><strong>examples/initial-review-output.json</strong><span>Worked blocker and follow-up result.</span></a></li>
-          <li><a href="evidence-driven-code-review/examples/closure-review-output.json"><strong>examples/closure-review-output.json</strong><span>Worked closure result with READY verdict.</span></a></li>
+          <li><a href="README.md"><strong>README.md</strong><span>Workflow overview, core model, layout and orchestrator.</span></a></li>
+          <li><a href="skills/code-review/SKILL.md"><strong>skills/code-review/SKILL.md</strong><span>Canonical review policy, evidence rules, scope and dispositions.</span></a></li>
+          <li><a href="agents/code-reviewer.md"><strong>agents/code-reviewer.md</strong><span>Independent, read-only reviewer role.</span></a></li>
+          <li><a href="skills/code-review/verifier-prompt.md"><strong>skills/code-review/verifier-prompt.md</strong><span>Single-candidate verifier contract and outputs.</span></a></li>
+          <li><a href="schemas/review-request.schema.json"><strong>schemas/review-request.schema.json</strong><span>Machine-readable initial and closure request shape.</span></a></li>
+          <li><a href="schemas/review-result.schema.json"><strong>schemas/review-result.schema.json</strong><span>Machine-readable review result shape.</span></a></li>
+          <li><a href="evidence_review/cli.py"><strong>evidence_review/cli.py</strong><span>Dependency-free contract, routing and closure command line.</span></a></li>
+          <li><a href="scripts/review_policy.py"><strong>scripts/review_policy.py</strong><span>Executable disposition and verdict checks.</span></a></li>
+          <li><a href="examples/initial-review-output.json"><strong>examples/initial-review-output.json</strong><span>Worked blocker and follow-up result.</span></a></li>
+          <li><a href="examples/closure-review-output.json"><strong>examples/closure-review-output.json</strong><span>Worked closure result with READY verdict.</span></a></li>
         </ul>
       </div>
     </section>

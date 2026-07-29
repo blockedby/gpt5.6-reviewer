@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import importlib.util
 import unittest
 from pathlib import Path
+
+from tests.common import finding, follow_up
 
 MODULE_PATH = Path(__file__).parents[1] / "scripts" / "review_policy.py"
 SPEC = importlib.util.spec_from_file_location("review_policy", MODULE_PATH)
@@ -9,46 +13,31 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(review_policy)
 
 
-def finding(**overrides):
-    value = {
-        "id": "REV-001",
-        "title": "Wrong resource is deleted",
-        "locations": [{"path": "cleanup.py", "start_line": 10, "end_line": 20}],
-        "scenario": "A mutable tag changes after validation.",
-        "expected": "Only the validated image is removed.",
-        "actual": "The image referenced by the changed tag is removed.",
-        "evidence_type": "static_proof",
-        "evidence": "The code validates tag identity and later removes by tag.",
-        "impact": 4,
-        "confidence": 95,
-        "relationship": "introduced",
-        "verification_status": "not_required",
-        "disposition": "BLOCK",
-        "next_action": "Remove by immutable image ID.",
-        "retain_regression_test": True,
-    }
-    value.update(overrides)
-    return value
-
-
-class ReviewPolicyTests(unittest.TestCase):
+class ReviewPolicyCompatibilityTests(unittest.TestCase):
     def test_confirmed_serious_introduced_finding_blocks(self):
         self.assertEqual(review_policy.expected_disposition(finding()), "BLOCK")
+        self.assertEqual(review_policy.validate_finding(finding()), [])
 
     def test_confirmed_impact_two_is_follow_up(self):
-        item = finding(impact=2, disposition="FOLLOW_UP")
+        item = follow_up()
         self.assertEqual(review_policy.expected_disposition(item), "FOLLOW_UP")
         self.assertEqual(review_policy.validate_finding(item), [])
 
     def test_preexisting_serious_does_not_block_current_change(self):
-        item = finding(relationship="pre_existing", disposition="FOLLOW_UP")
+        item = finding(
+            relationship="pre_existing",
+            disposition="FOLLOW_UP",
+        )
+        item.pop("closure_condition")
         self.assertEqual(review_policy.expected_disposition(item), "FOLLOW_UP")
         self.assertEqual(review_policy.validate_finding(item), [])
 
     def test_low_confidence_candidate_must_not_reach_final_output(self):
         item = finding(confidence=70)
         self.assertIsNone(review_policy.expected_disposition(item))
-        self.assertTrue(any("should not appear" in e for e in review_policy.validate_finding(item)))
+        self.assertTrue(
+            any("must be omitted" in error for error in review_policy.validate_finding(item))
+        )
 
     def test_unproven_serious_runtime_concern_is_follow_up(self):
         item = finding(
@@ -58,6 +47,7 @@ class ReviewPolicyTests(unittest.TestCase):
             disposition="FOLLOW_UP",
             evidence="Only an authorized staging deploy can resolve this.",
         )
+        item.pop("closure_condition")
         self.assertEqual(review_policy.expected_disposition(item), "FOLLOW_UP")
         self.assertEqual(review_policy.validate_finding(item), [])
 
@@ -67,7 +57,7 @@ class ReviewPolicyTests(unittest.TestCase):
     def test_verdicts(self):
         self.assertEqual(review_policy.expected_verdict([finding()]), "NOT_READY")
         self.assertEqual(
-            review_policy.expected_verdict([finding(impact=2, disposition="FOLLOW_UP")]),
+            review_policy.expected_verdict([follow_up()]),
             "READY_WITH_FOLLOW_UPS",
         )
         self.assertEqual(review_policy.expected_verdict([]), "READY")

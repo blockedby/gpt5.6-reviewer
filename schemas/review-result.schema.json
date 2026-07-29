@@ -75,5 +75,29 @@
       "minLength": 1,
       "maxLength": 500
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "closure"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "closure"
+        ]
+      },
+      "else": {
+        "properties": {
+          "closure": false
+        }
+      }
+    }
+  ]
 }
