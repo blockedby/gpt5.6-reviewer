@@ -1,5 +1,0 @@
-[project]
-name = "evidence-driven-code-review"
-version = "0.1.0"
-description = "Evidence-driven code-review prompts, schemas, and checks for coding agents."
-requires-python = ">=3.10"

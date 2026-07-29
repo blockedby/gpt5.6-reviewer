@@ -24,7 +24,7 @@
   "properties": {
     "id": {
       "type": "string",
-      "pattern": "^REV-[0-9]{3,}$"
+      "pattern": "^REV-(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2,})$"
     },
     "title": {
       "type": "string",
@@ -40,6 +40,14 @@
         "required": [
           "path"
         ],
+        "dependentRequired": {
+          "start_line": [
+            "end_line"
+          ],
+          "end_line": [
+            "start_line"
+          ]
+        },
         "properties": {
           "path": {
             "type": "string",
@@ -124,7 +132,27 @@
       "type": "boolean"
     },
     "closure_condition": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "const": "BLOCK"
+          }
+        },
+        "required": [
+          "disposition"
+        ]
+      },
+      "then": {
+        "required": [
+          "closure_condition"
+        ]
+      }
+    }
+  ]
 }

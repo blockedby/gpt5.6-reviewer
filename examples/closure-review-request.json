@@ -1,0 +1,47 @@
+{
+  "authorized_checks": [
+    "inspect remediation diff",
+    "run focused archive identity contract test",
+    "inspect direct loader call path"
+  ],
+  "base_sha": "5b0ce7ea",
+  "changed_paths": [
+    "scripts/local/prebuild-release-images.sh",
+    "scripts/local/recovery_journal.py"
+  ],
+  "forbidden_operations": [
+    "broad repository audit",
+    "real deploy",
+    "destructive Docker cleanup"
+  ],
+  "head_sha": "dbb01214",
+  "mode": "closure",
+  "prior_findings": [
+    {
+      "actual": "Validation reads one file while Docker may reopen and import a different file at the same pathname.",
+      "closure_condition": "The substitution test can no longer make imported bytes differ from validated bytes.",
+      "confidence": 98,
+      "disposition": "BLOCK",
+      "evidence": "A focused fake-Docker barrier test replaces the archive after validation; the loader receives substituted bytes.",
+      "evidence_type": "contract_test",
+      "expected": "Docker imports the exact archive object that passed validation.",
+      "id": "REV-001",
+      "impact": 4,
+      "locations": [
+        {
+          "end_line": 238,
+          "path": "scripts/local/prebuild-release-images.sh",
+          "start_line": 210
+        }
+      ],
+      "next_action": "Open once without following symlinks, validate that descriptor, and pass the same descriptor to Docker.",
+      "relationship": "introduced",
+      "retain_regression_test": true,
+      "scenario": "A concurrent process replaces the archive pathname after validation but before Docker reopens it for import.",
+      "title": "Archive validation and import can use different files",
+      "verification_status": "verified"
+    }
+  ],
+  "remediation_diff": "diff --git a/scripts/local/prebuild-release-images.sh b/scripts/local/prebuild-release-images.sh\n--- a/scripts/local/prebuild-release-images.sh\n+++ b/scripts/local/prebuild-release-images.sh\n@@ -210,2 +210,2 @@\n-validate_archive \"$archive\"\n-docker load < \"$archive\"\n+exec {archive_fd}<\"$archive\"\n+validate_and_load_fd \"$archive_fd\"\n",
+  "task": "Prebuild ten immutable Docker images, import them only after all outputs are valid, run integration shards against those exact images, and clean up only resources owned by this run."
+}

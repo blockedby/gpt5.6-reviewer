@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-request.schema.json",
+  "title": "Evidence-driven code review request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "task",
+    "base_sha",
+    "head_sha",
+    "authorized_checks",
+    "forbidden_operations"
+  ],
+  "properties": {
+    "mode": {
+      "enum": [
+        "initial",
+        "closure"
+      ]
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "base_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "head_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "changed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "authorized_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbidden_operations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "prior_findings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "finding.schema.json"
+          },
+          {
+            "properties": {
+              "disposition": {
+                "const": "BLOCK"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "remediation_diff": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "closure"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "prior_findings",
+          "remediation_diff"
+        ]
+      },
+      "else": {
+        "properties": {
+          "prior_findings": false,
+          "remediation_diff": false
+        }
+      }
+    }
+  ]
+}
