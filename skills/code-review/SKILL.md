@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Evidence-driven initial and closure review using separate confidence and impact, with disposable verifier subagents for uncertain serious findings.
+description: Use when an initial or closure code review requires deep analysis and a structured response.
 ---
 
 # Code Review
