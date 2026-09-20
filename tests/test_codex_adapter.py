@@ -15,7 +15,7 @@ ADAPTER = ROOT / "agents" / "codex" / "evidence-reviewer.toml"
 
 @unittest.skipIf(tomllib is None, "TOML parsing requires Python 3.11+")
 class CodexAdapterTests(unittest.TestCase):
-    def test_copied_agent_config_is_read_only_and_inherits_model(self):
+    def test_copied_agent_config_requests_read_only_and_inherits_model(self):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / ".codex" / "agents" / ADAPTER.name
             destination.parent.mkdir(parents=True)

@@ -1,5 +1,7 @@
 name = "evidence_reviewer"
 description = "Independent, read-only review of code changes or assigned audit scopes using evidence, impact, and confidence."
+# Codex CLI 0.154.0 inherits the parent's runtime sandbox even with this setting.
+# Launch the parent in read-only mode; this adapter is not a security boundary.
 sandbox_mode = "read-only"
 
 developer_instructions = """

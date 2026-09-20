@@ -45,12 +45,17 @@ schemas and `agents/openai.yaml`. Existing installations should be updated
 intentionally rather than overwritten blindly. Codex supports symlinked skill
 directories too; restart the client if discovery has not refreshed.
 
-For a separate read-only reviewer, also copy
+For a separate reviewer, also copy
 [`agents/codex/evidence-reviewer.toml`](agents/codex/evidence-reviewer.toml) to
 `~/.codex/agents/evidence-reviewer.toml` (personal) or
 `.codex/agents/evidence-reviewer.toml` (project). The adapter requires the
 installed `code-review` skill; it does not bundle or install it. The skills.sh
 command installs the skill, **not** this separate custom-agent adapter.
+
+Open the project as trusted in Codex so its local agent configuration can load.
+For the tested project setup, `.codex/config.toml` also existed. Do not overwrite
+an existing config or bypass workspace trust. Start the **parent session in
+read-only mode** before delegating; in CLI, use `codex --sandbox read-only`.
 
 Ask Codex:
 
@@ -63,9 +68,20 @@ Replace `main` with the actual target branch. For a standalone JSON review,
 explicitly request the skill's standalone contract and provide its required
 inputs. For a partial review, supply the assigned concern and report format.
 
-The adapter inherits the parent's model and reasoning configuration and sets
-`sandbox_mode = "read-only"`. Tests requiring writes may therefore be unavailable;
-the reviewer reports that limitation rather than weakening the sandbox.
+The adapter inherits the parent's model and reasoning configuration and requests
+`sandbox_mode = "read-only"`. **Do not treat this field as an enforced sandbox
+override.** Live testing on Codex CLI 0.154.0 showed that a writable parent's
+permissions remain writable in the child despite this setting. Use a read-only
+parent for enforced read-only review; the adapter alone is not a security boundary.
+Tests requiring writes are unavailable in that mode.
+
+Live CLI verification confirmed discovery of `evidence_reviewer`, loading the
+installed skill and schemas, detection of an injected regression, a valid JSON
+result, and unchanged fixture files. Both parent and child had read-only runtime
+policies when the parent was started read-only. The desktop GUI itself remains
+untested. On this version, an ephemeral delegated run failed with
+`no thread with id`; the verified run used a normal session in an isolated,
+trusted `CODEX_HOME`. See [verification details](docs/codex-verification.md).
 Subagent use depends on client version and host permissions.
 `agents/openai.yaml` supplies skill UI metadata; it is **not** a subagent definition.
 The Markdown wrapper remains available for other harnesses.
