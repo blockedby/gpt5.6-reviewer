@@ -36,6 +36,44 @@ separately installable skill. The Python CLI below is optional, installed
 separately, and validates standalone change-review results, not arbitrary host
 audit reports.
 
+### Codex desktop, CLI, and IDE
+
+The skill works in local Codex clients. On the machine running Codex, install
+`skills/code-review/` under `~/.agents/skills/code-review/` for personal use or
+`.agents/skills/code-review/` in a project. Copy the **whole directory**, including
+schemas and `agents/openai.yaml`. Existing installations should be updated
+intentionally rather than overwritten blindly. Codex supports symlinked skill
+directories too; restart the client if discovery has not refreshed.
+
+For a separate read-only reviewer, also copy
+[`agents/codex/evidence-reviewer.toml`](agents/codex/evidence-reviewer.toml) to
+`~/.codex/agents/evidence-reviewer.toml` (personal) or
+`.codex/agents/evidence-reviewer.toml` (project). The adapter requires the
+installed `code-review` skill; it does not bundle or install it. The skills.sh
+command installs the skill, **not** this separate custom-agent adapter.
+
+Ask Codex:
+
+> Delegate an independent review to evidence_reviewer. Review this branch
+> against main for the following task and acceptance criteria: … Do not modify
+> code. Pass the comparison identities and permitted read-only checks to the
+> reviewer, and summarize its findings and evidence gaps.
+
+Replace `main` with the actual target branch. For a standalone JSON review,
+explicitly request the skill's standalone contract and provide its required
+inputs. For a partial review, supply the assigned concern and report format.
+
+The adapter inherits the parent's model and reasoning configuration and sets
+`sandbox_mode = "read-only"`. Tests requiring writes may therefore be unavailable;
+the reviewer reports that limitation rather than weakening the sandbox.
+Subagent use depends on client version and host permissions.
+`agents/openai.yaml` supplies skill UI metadata; it is **not** a subagent definition.
+The Markdown wrapper remains available for other harnesses.
+
+See OpenAI's [skills documentation](https://developers.openai.com/codex/skills)
+and [custom subagent documentation](https://developers.openai.com/codex/subagents).
+These files do not install anything into your local Codex configuration by themselves.
+
 ## Standalone policy
 
 Confidence measures whether a defect exists. Impact measures its consequence.

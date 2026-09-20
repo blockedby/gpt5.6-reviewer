@@ -105,6 +105,7 @@ class SkillPackageTests(unittest.TestCase):
 
             self.assertTrue((isolated_skill / "SKILL.md").is_file())
             self.assertTrue((isolated_skill / "verifier-prompt.md").is_file())
+            self.assertTrue((isolated_skill / "agents" / "openai.yaml").is_file())
             self.assertTrue(packaged_schema_dir.is_dir())
 
             canonical_schema_paths = sorted(CANONICAL_SCHEMA_DIR.glob("*.schema.json"))

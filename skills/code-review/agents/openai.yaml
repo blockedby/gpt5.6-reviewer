@@ -1,0 +1,7 @@
+interface:
+  display_name: "Evidence-Driven Code Review"
+  short_description: "Review changes and audit scopes with evidence"
+  default_prompt: "Use $code-review to review the assigned scope with evidence, without modifying code."
+
+policy:
+  allow_implicit_invocation: true
