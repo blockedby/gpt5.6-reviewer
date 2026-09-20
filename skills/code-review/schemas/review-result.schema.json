@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review-result.schema.json",
+  "title": "Evidence-driven code review result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "base_sha",
+    "head_sha",
+    "verdict",
+    "findings",
+    "summary"
+  ],
+  "properties": {
+    "mode": {
+      "enum": [
+        "initial",
+        "closure"
+      ]
+    },
+    "base_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "head_sha": {
+      "type": "string",
+      "minLength": 7
+    },
+    "verdict": {
+      "enum": [
+        "READY",
+        "READY_WITH_FOLLOW_UPS",
+        "NOT_READY"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "finding.schema.json"
+      }
+    },
+    "closure": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REV-(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2,})$"
+          },
+          "status": {
+            "enum": [
+              "fixed",
+              "still_open",
+              "regressed",
+              "not_applicable"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "closure"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "required": [
+          "closure"
+        ]
+      },
+      "else": {
+        "properties": {
+          "closure": false
+        }
+      }
+    }
+  ]
+}

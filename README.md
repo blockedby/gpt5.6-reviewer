@@ -11,7 +11,32 @@ handoffs. It does **not** invoke an LLM: the surrounding agent harness supplies
 the independent reviewer described by `agents/code-reviewer.md` and
 `skills/code-review/SKILL.md`.
 
-## Policy
+## Agent skill
+
+Install the portable skill with the skills.sh CLI:
+
+```bash
+npx skills add blockedby/gpt5.6-reviewer --skill code-review
+```
+
+`skills/code-review/SKILL.md` is the discoverable entry point. Its directory
+includes the verifier prompt and JSON schemas, so installing the skill does not
+require copying this repository's `agents/`, root `schemas/`, or Python package.
+The skill targets current SOTA coding models; delegated verification additionally
+requires a host that supports and explicitly permits subagents.
+
+Use it for standalone change reviews or bounded, host-orchestrated audits such
+as `audit-pipeline`. Standalone reviews use this repository's JSON contract;
+orchestrated roles use the host's scope, permissions, and reporting contract.
+A single audit track does not start its own review loop or declare the entire
+review ready. See [execution context](skills/code-review/SKILL.md#execution-context).
+
+`agents/code-reviewer.md` is an optional repository-local agent wrapper, not a
+separately installable skill. The Python CLI below is optional, installed
+separately, and validates standalone change-review results, not arbitrary host
+audit reports.
+
+## Standalone policy
 
 Confidence measures whether a defect exists. Impact measures its consequence.
 The blocking predicate is unchanged:
@@ -44,7 +69,7 @@ Only `BLOCK` findings go back to the implementation owner. A closure review
 checks those exact findings, the remediation diff, touched invariants, and
 regressions caused by remediation; it is not another broad audit.
 
-## Installation
+## Python CLI installation
 
 Python 3.10 or newer is required. Runtime and tests use only the standard
 library.
@@ -136,7 +161,10 @@ must contain at least one blocker. The generated request:
 ## JSON contracts
 
 `schemas/review-request.schema.json`, `schemas/finding.schema.json`, and
-`schemas/review-result.schema.json` document structural contracts. The Python
+`schemas/review-result.schema.json` document standalone structural contracts.
+These root schemas are canonical; identical copies are bundled under
+`skills/code-review/schemas/` for portable installation. Update both together;
+packaging tests check equality and isolated reference resolution. The Python
 validator additionally enforces cross-object and policy rules that JSON Schema
 cannot conveniently express.
 
