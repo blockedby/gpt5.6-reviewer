@@ -11,7 +11,130 @@ handoffs. It does **not** invoke an LLM: the surrounding agent harness supplies
 the independent reviewer described by `agents/code-reviewer.md` and
 `skills/code-review/SKILL.md`.
 
-## Policy
+## Agent skill
+
+Install the portable skill with the skills.sh CLI:
+
+```bash
+npx skills add blockedby/gpt5.6-reviewer --skill code-review
+```
+
+`skills/code-review/SKILL.md` is the discoverable entry point. Its directory
+includes the verifier prompt and JSON schemas, so installing the skill does not
+require copying this repository's `agents/`, root `schemas/`, or Python package.
+The skill targets current SOTA coding models; delegated verification additionally
+requires a host that supports and explicitly permits subagents.
+
+Use it for standalone change reviews or bounded, host-orchestrated audits such
+as `audit-pipeline`. Standalone reviews use this repository's JSON contract;
+orchestrated roles use the host's scope, permissions, and reporting contract.
+A single audit track does not start its own review loop or declare the entire
+review ready. See [execution context](skills/code-review/SKILL.md#execution-context).
+
+`agents/code-reviewer.md` is an optional repository-local agent wrapper, not a
+separately installable skill. The Python CLI below is optional, installed
+separately, and validates standalone change-review results, not arbitrary host
+audit reports.
+
+### Codex desktop, CLI, and IDE
+
+#### Personal installation (macOS / Linux)
+
+Clone the repository once. If you already have it, use that checkout instead of
+running `git clone` again; update it to the reviewed `main` revision first.
+
+```bash
+git clone https://github.com/blockedby/gpt5.6-reviewer.git \
+  ~/code/skills/gpt5.6-reviewer
+```
+
+Install both components with symlinks (keep the clone at this location):
+
+```bash
+(
+  set -eu
+  repo="$HOME/code/skills/gpt5.6-reviewer"
+  codex_home="${CODEX_HOME:-$HOME/.codex}"
+  skill="$HOME/.agents/skills/code-review"
+  agent="$codex_home/agents/evidence-reviewer.toml"
+
+  # Stop rather than overwrite an existing installation, including broken links.
+  for target in "$skill" "$agent"; do
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      printf 'Already exists; inspect before updating: %s\n' "$target" >&2
+      exit 1
+    fi
+  done
+  test -f "$repo/skills/code-review/SKILL.md"
+  test -f "$repo/agents/codex/evidence-reviewer.toml"
+  mkdir -p "$HOME/.agents/skills" "$codex_home/agents"
+  ln -s "$repo/skills/code-review" "$skill"
+  # Copy the agent file: unlike skill folders, agent symlink discovery may vary.
+  cp "$repo/agents/codex/evidence-reviewer.toml" "$agent"
+)
+```
+
+Restart Codex, open the repository you want reviewed, and start a read-only
+session (`codex --sandbox read-only` for CLI). Use the delegation prompt below.
+The skill symlink follows updates to this clone; the copied agent must be updated
+separately after reviewing adapter changes. No config, model, or trust settings
+are changed by these commands.
+
+#### Project installation and usage
+
+The skill works in local Codex clients. On the machine running Codex, install
+`skills/code-review/` under `~/.agents/skills/code-review/` for personal use or
+`.agents/skills/code-review/` in a project. Copy the **whole directory**, including
+schemas and `agents/openai.yaml`. Existing installations should be updated
+intentionally rather than overwritten blindly. Codex supports symlinked skill
+directories too; restart the client if discovery has not refreshed.
+
+For a separate reviewer, also copy
+[`agents/codex/evidence-reviewer.toml`](agents/codex/evidence-reviewer.toml) to
+`~/.codex/agents/evidence-reviewer.toml` (personal) or
+`.codex/agents/evidence-reviewer.toml` (project). The adapter requires the
+installed `code-review` skill; it does not bundle or install it. The skills.sh
+command installs the skill, **not** this separate custom-agent adapter.
+
+Open the project as trusted in Codex so its local agent configuration can load.
+For the tested project setup, `.codex/config.toml` also existed. Do not overwrite
+an existing config or bypass workspace trust. Start the **parent session in
+read-only mode** before delegating; in CLI, use `codex --sandbox read-only`.
+
+Ask Codex:
+
+> Delegate an independent review to evidence_reviewer. Review this branch
+> against main for the following task and acceptance criteria: … Do not modify
+> code. Pass the comparison identities and permitted read-only checks to the
+> reviewer, and summarize its findings and evidence gaps.
+
+Replace `main` with the actual target branch. For a standalone JSON review,
+explicitly request the skill's standalone contract and provide its required
+inputs. For a partial review, supply the assigned concern and report format.
+
+The adapter inherits the parent's model and reasoning configuration and requests
+`sandbox_mode = "read-only"`. **Do not treat this field as an enforced sandbox
+override.** Live testing on Codex CLI 0.154.0 showed that a writable parent's
+permissions remain writable in the child despite this setting. Use a read-only
+parent for enforced read-only review; the adapter alone is not a security boundary.
+Tests requiring writes are unavailable in that mode.
+
+Live CLI verification confirmed discovery of `evidence_reviewer`, loading the
+installed skill and schemas, detection of an injected regression, a valid JSON
+result, and unchanged fixture files. Both parent and child had read-only runtime
+policies when the parent was started read-only. The desktop GUI itself remains
+untested. On this version, an ephemeral delegated run failed with
+`no thread with id`; the verified run used a normal session in an isolated,
+trusted `CODEX_HOME`. See [verification details](docs/codex-verification.md).
+Subagent use depends on client version and host permissions.
+`agents/openai.yaml` supplies skill UI metadata; it is **not** a subagent definition.
+The Markdown wrapper remains available for other harnesses.
+
+See OpenAI's [skills documentation](https://developers.openai.com/codex/skills)
+and [custom subagent documentation](https://developers.openai.com/codex/subagents).
+These files do not install anything into your local Codex configuration by themselves.
+
+## Standalone policy
 
 Confidence measures whether a defect exists. Impact measures its consequence.
 The blocking predicate is unchanged:
@@ -44,7 +167,7 @@ Only `BLOCK` findings go back to the implementation owner. A closure review
 checks those exact findings, the remediation diff, touched invariants, and
 regressions caused by remediation; it is not another broad audit.
 
-## Installation
+## Python CLI installation
 
 Python 3.10 or newer is required. Runtime and tests use only the standard
 library.
@@ -136,7 +259,10 @@ must contain at least one blocker. The generated request:
 ## JSON contracts
 
 `schemas/review-request.schema.json`, `schemas/finding.schema.json`, and
-`schemas/review-result.schema.json` document structural contracts. The Python
+`schemas/review-result.schema.json` document standalone structural contracts.
+These root schemas are canonical; identical copies are bundled under
+`skills/code-review/schemas/` for portable installation. Update both together;
+packaging tests check equality and isolated reference resolution. The Python
 validator additionally enforces cross-object and policy rules that JSON Schema
 cannot conveniently express.
 

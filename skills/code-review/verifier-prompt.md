@@ -1,4 +1,4 @@
-You are validating one candidate code-review finding.
+You are validating one candidate code-review finding, only when the caller has authorized this verification. Inherit the caller's read-only and tool restrictions; this template grants no additional permissions.
 
 ## Candidate
 
@@ -31,11 +31,11 @@ Use the cheapest sufficient evidence:
 4. safe local reproducer;
 5. integration check only when cheaper proof is insufficient.
 
-A new test is preferred when natural, deterministic, safe, reasonably cheap, and protective of a stable invariant. It is not required when the defect is inevitable from code or existing evidence.
+Recommend a new test when natural, deterministic, safe, reasonably cheap, and protective of a stable invariant. Create or execute it only within explicitly authorized write/check permissions; a read-only assignment does not permit writing it into the reviewed repository. A new test is not required when the defect is inevitable from code or existing evidence.
 
 Do not deploy, mutate production, perform destructive operations, run unauthorized migrations, build expensive images, or run broad suites solely to verify this candidate.
 
-A created test or reproducer must express a concrete expected/actual difference, fail before the fix, fail for the claimed reason, avoid incidental implementation details, and pass after correcting the defect.
+An authorized test or reproducer must express a concrete expected/actual difference, fail for the claimed reason, and avoid incidental implementation details. Do not implement a fix to prove it passes; report the expected post-fix assertion separately from observed results.
 
 ## Confidence
 

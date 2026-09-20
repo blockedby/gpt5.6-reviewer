@@ -1,13 +1,26 @@
 ---
 name: code-review
-description: Use when an initial or closure code review requires deep analysis and a structured response.
+description: Review code changes or bounded repository audit scopes using evidence, impact, and confidence. Use for initial reviews, remediation closure, or assigned audit-pipeline tracks; follow the host's role and reporting contract when orchestrated.
 ---
 
 # Code Review
 
 Review for real, actionable defects. Optimize for signal, not volume.
 
-## Inputs
+## Execution context
+
+Resolve supporting paths relative to this skill directory, not the reviewed repository or current working directory.
+
+Choose the context supplied by the caller; do not infer authority from a pipeline name:
+
+- **Standalone change review:** use the inputs, disposition rules, and JSON output below. The bundled schemas describe this context.
+- **Host-orchestrated audit** (for example, an `audit-pipeline` track or synthesis role): the host owns the assigned scope, required inputs, tool permissions, delegation, finding IDs, disposition policy, and report/submission contract. Apply this skill's evidence and confidence guidance within that assignment; do not replace the host contract with the standalone schema or readiness verdict. A track reviews only its assigned concern; a synthesis role reconciles supplied evidence without launching another broad review. Do not invent base/head identities for a snapshot audit, or discard in-scope existing defects merely because no change introduced them.
+
+If the host contract is missing or contradictory, report that limitation through the available reporting channel rather than fabricate a compatible result.
+
+This skill grants no execution or delegation authority. Do not implement fixes, create issues, deploy, or mutate external state as part of review. Checks, temporary test artifacts, and disposable verifier agents require explicit host/caller permission and remain subject to its tool restrictions. In a read-only assignment, propose new tests instead of writing them; use a disposable workspace only when authorized.
+
+## Standalone inputs
 
 Required:
 
@@ -26,7 +39,7 @@ If essential input is missing, inspect the repository when safe. If the acceptan
 
 ### Initial mode
 
-Inspect:
+For a standalone change review, inspect:
 
 - behavior requested by the task;
 - changed code;
@@ -84,7 +97,7 @@ Classify as:
 - `pre_existing`;
 - `unrelated`.
 
-Only the first three may block the current change.
+In standalone change review, only the first three may block the current change. For an orchestrated audit, retain truthful relationship evidence and use the host's classification and blocking policy; never relabel a pre-existing defect as introduced.
 
 ## Impact
 
@@ -160,7 +173,7 @@ When expensive or risky runtime verification is the only proof, classify as `UNP
 
 ## Disposable verifier subagent
 
-Spawn when:
+When delegation is explicitly authorized and available, spawn when:
 
 ```text
 impact >= 3
@@ -170,7 +183,7 @@ and safe verification could materially change the verdict
 
 Do not spawn when evidence already supports 80+, impact is 1–2, the only possible action is forbidden or disproportionate, or the candidate is unrelated/pre-existing without worsening.
 
-Use `verifier-prompt.md`.
+Use `verifier-prompt.md`. If delegation is unavailable or forbidden, perform only permitted local verification; otherwise report the evidence gap. Do not request additional tool authority or start another pipeline to bypass the restriction.
 
 Pass only one candidate, locations, relevant requirement/invariant, reviewer evidence, minimal context, safe checks, and forbidden operations.
 
@@ -188,7 +201,7 @@ After verification:
 
 Do not ask the verifier to review the rest of the change.
 
-## Disposition
+## Standalone disposition
 
 ### BLOCK
 
@@ -211,9 +224,9 @@ Follow-ups must be concrete.
 
 Omit impact 1, confidence below 50, disproved findings, unsupported concerns, ordinary unproven candidates, and generic suggestions.
 
-`VERIFY` is transient and must not appear in final output when safe verification can be run.
+`VERIFY` is transient and must not appear in final output when safe, authorized verification can be run.
 
-## Finding IDs and deduplication
+## Standalone finding IDs and deduplication
 
 Assign stable IDs only after a finding becomes `BLOCK` or `FOLLOW_UP`, using `REV-001`, `REV-002`, etc.
 
@@ -238,7 +251,7 @@ Prefer evidence corresponding directly to the original proof: failing test now p
 
 If remediation changes the proof test, inspect that change. Weakening or deleting the test does not close the finding.
 
-## Readiness
+## Standalone readiness
 
 - `NOT_READY`: at least one `BLOCK`;
 - `READY_WITH_FOLLOW_UPS`: no blockers and at least one follow-up;
@@ -248,7 +261,9 @@ Readiness is based on residual findings, not review-round count.
 
 ## Output
 
-Return JSON matching `schemas/review-result.schema.json`.
+For standalone change review, return JSON matching `schemas/review-result.schema.json`, with finding objects defined in `schemas/finding.schema.json`. The request contract is `schemas/review-request.schema.json`. These files are bundled with the skill; no repository checkout or Python installation is required to read them. The optional Python validator is distributed separately in the source repository.
+
+For an orchestrated audit, use only the host's report/submission contract, including its handling of missing evidence and completion. Do not emit a second standalone result.
 
 Each emitted finding includes stable ID, title, locations, scenario, expected, actual, evidence type and evidence, impact, confidence, relationship, verification status, disposition, minimal next action, and regression-test recommendation.
 
