@@ -38,6 +38,50 @@ audit reports.
 
 ### Codex desktop, CLI, and IDE
 
+#### Personal installation (macOS / Linux)
+
+Clone the repository once. If you already have it, use that checkout instead of
+running `git clone` again; update it to the reviewed `main` revision first.
+
+```bash
+git clone https://github.com/blockedby/gpt5.6-reviewer.git \
+  ~/code/skills/gpt5.6-reviewer
+```
+
+Install both components with symlinks (keep the clone at this location):
+
+```bash
+(
+  set -eu
+  repo="$HOME/code/skills/gpt5.6-reviewer"
+  codex_home="${CODEX_HOME:-$HOME/.codex}"
+  skill="$HOME/.agents/skills/code-review"
+  agent="$codex_home/agents/evidence-reviewer.toml"
+
+  # Stop rather than overwrite an existing installation, including broken links.
+  for target in "$skill" "$agent"; do
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      printf 'Already exists; inspect before updating: %s\n' "$target" >&2
+      exit 1
+    fi
+  done
+  test -f "$repo/skills/code-review/SKILL.md"
+  test -f "$repo/agents/codex/evidence-reviewer.toml"
+  mkdir -p "$HOME/.agents/skills" "$codex_home/agents"
+  ln -s "$repo/skills/code-review" "$skill"
+  # Copy the agent file: unlike skill folders, agent symlink discovery may vary.
+  cp "$repo/agents/codex/evidence-reviewer.toml" "$agent"
+)
+```
+
+Restart Codex, open the repository you want reviewed, and start a read-only
+session (`codex --sandbox read-only` for CLI). Use the delegation prompt below.
+The skill symlink follows updates to this clone; the copied agent must be updated
+separately after reviewing adapter changes. No config, model, or trust settings
+are changed by these commands.
+
+#### Project installation and usage
+
 The skill works in local Codex clients. On the machine running Codex, install
 `skills/code-review/` under `~/.agents/skills/code-review/` for personal use or
 `.agents/skills/code-review/` in a project. Copy the **whole directory**, including
